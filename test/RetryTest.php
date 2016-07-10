@@ -10,7 +10,7 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
         $invocations = 0;
 
         $value = \ScriptFUSION\Retry\retry($tries = 1, function () use (&$invocations) {
-            $invocations++;
+            ++$invocations;
 
             return 5;
         });
@@ -25,10 +25,11 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
         $failed = false;
 
         $value = \ScriptFUSION\Retry\retry($tries = 2, function () use (&$invocations, &$failed) {
-            $invocations++;
+            ++$invocations;
 
             if (!$failed) {
                 $failed = true;
+
                 throw new \RuntimeException;
             }
 
@@ -45,7 +46,7 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
         $invocations = 0;
 
         $value = \ScriptFUSION\Retry\retry($tries = 0, function () use (&$invocations) {
-            $invocations++;
+            ++$invocations;
 
             return 5;
         });
@@ -61,14 +62,38 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
 
         try {
             \ScriptFUSION\Retry\retry($tries = 2, function () use (&$invocations, &$innerException) {
-                $invocations++;
+                ++$invocations;
+
                 throw $innerException = new \RuntimeException;
             });
-        } catch (\Exception $outerException) {
+        } catch (FailingTooHardException $outerException) {
         }
 
         self::assertInstanceOf(FailingTooHardException::class, $outerException);
         self::assertSame($innerException, $outerException->getPrevious());
         self::assertSame($tries, $invocations);
+    }
+
+    public function testErrorCallback()
+    {
+        $invocations = $errors = 0;
+        $outerException = $innerException = null;
+
+        try {
+            \ScriptFUSION\Retry\retry($tries = 2, function () use (&$invocations, &$innerException) {
+                ++$invocations;
+
+                throw $innerException = new \RuntimeException;
+            }, function (\Exception $exception) use (&$innerException, &$errors) {
+                ++$errors;
+
+                self::assertSame($innerException, $exception);
+            });
+        } catch (FailingTooHardException $outerException) {
+        }
+
+        self::assertInstanceOf(FailingTooHardException::class, $outerException);
+        self::assertSame($tries, $invocations);
+        self::assertSame(1, $errors);
     }
 }
