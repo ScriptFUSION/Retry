@@ -1,19 +1,31 @@
 <?php
+namespace ScriptFUSION\Retry;
 
-namespace igorw;
-
-class FailingTooHardException extends \Exception {}
-
-function retry($retries, callable $fn)
+/**
+ * Tries the specified operation up to the specified number of times.
+ *
+ * @param int $tries Number of times.
+ * @param callable $operation Operation.
+ *
+ * @return mixed Result of running the operation if tries is greater than zero,
+ *     otherwise null.
+ */
+function retry($tries, callable $operation)
 {
-    beginning:
+    $tries |= 0;
+
+    if ($tries <= $attempts = 0) {
+        return;
+    }
+
     try {
-        return $fn();
+        beginning:
+        return $operation();
     } catch (\Exception $e) {
-        if (!$retries) {
-            throw new FailingTooHardException('', 0, $e);
+        if ($tries === ++$attempts) {
+            throw new FailingTooHardException($attempts, $e);
         }
-        $retries--;
+
         goto beginning;
     }
 }
