@@ -29,7 +29,9 @@ function retry($tries, callable $operation, callable $onError = null)
             throw new FailingTooHardException($attempts, $exception);
         }
 
-        $onError && $onError($exception);
+        if ($onError && $onError($exception) === false) {
+            return;
+        }
 
         goto beginning;
     }

@@ -2,6 +2,7 @@ Retry
 =====
 
 [![Latest version][Version image]][Releases]
+[![Total downloads][Downloads image]][Downloads]
 [![Build status][Build image]][Build]
 [![Test coverage][Coverage image]][Coverage]
 [![Code style][Style image]][Style]
@@ -19,15 +20,17 @@ Requirements
 Usage
 -----
 
-The `retry` function retries an operation up to the specified number of times with an optional error handler and has
-the following signature.
+The `retry` function retries an operation up to the specified number of times with an optional exception handler.
+
+If an exception handler is specified, it is called immediately before retrying the operation. If the handler returns
+`false`, the operation is not retried.
 
 ```
 retry(int $times, callable $operation, callable $onError = null);
 ```
 * `$times`&mdash;Maximum number of times the operation may run.
 * `$operation`&mdash;Operation to run up to the specified number of times.
-* `$onError`&mdash;Optional. Error handler called immediately before retrying the operation.
+* `$onError`&mdash;Optional. Exception handler that receives the thrown exception as its first argument.
 
 Note in the original library, `$times` specifies the number of *retries* and therefore the operation could run up to
 `$times + 1` times. In this version, `$times` specifies exactly the number of times the operation may run such that if
@@ -48,6 +51,8 @@ $response = retry(5, function () use ($url) {
 
   [Releases]: https://github.com/ScriptFUSION/Retry/releases
   [Version image]: https://poser.pugx.org/scriptfusion/retry/v/stable "Latest version"
+  [Downloads]: https://packagist.org/packages/scriptfusion/retry
+  [Downloads image]: https://poser.pugx.org/scriptfusion/retry/downloads "Total downloads"
   [Build]: http://travis-ci.org/ScriptFUSION/Retry
   [Build image]: https://travis-ci.org/ScriptFUSION/Retry.svg "Build status"
   [Coverage]: https://coveralls.io/github/ScriptFUSION/Retry

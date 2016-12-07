@@ -94,6 +94,24 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
 
         self::assertInstanceOf(FailingTooHardException::class, $outerException);
         self::assertSame($tries, $invocations);
-        self::assertSame(1, $errors);
+        self::assertSame($tries - 1, $errors);
+    }
+
+    public function testErrorCallbackHalt()
+    {
+        $invocations = 0;
+
+        try {
+            \ScriptFUSION\Retry\retry($tries = 2, function () use (&$invocations) {
+                ++$invocations;
+
+                throw new \RuntimeException;
+            }, function () {
+                return false;
+            });
+        } catch (FailingTooHardException $exception) {
+        }
+
+        self::assertSame(1, $invocations);
     }
 }
