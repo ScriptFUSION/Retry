@@ -9,7 +9,7 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
     {
         $invocations = 0;
 
-        $value = \ScriptFUSION\Retry\retry($tries = 1, function () use (&$invocations) {
+        $value = \ScriptFUSION\Retry\retry($tries = 1, static function () use (&$invocations) {
             ++$invocations;
 
             return 5;
@@ -24,7 +24,7 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
         $invocations = 0;
         $failed = false;
 
-        $value = \ScriptFUSION\Retry\retry($tries = 2, function () use (&$invocations, &$failed) {
+        $value = \ScriptFUSION\Retry\retry($tries = 2, static function () use (&$invocations, &$failed) {
             ++$invocations;
 
             if (!$failed) {
@@ -45,7 +45,7 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
     {
         $invocations = 0;
 
-        $value = \ScriptFUSION\Retry\retry($tries = 0, function () use (&$invocations) {
+        $value = \ScriptFUSION\Retry\retry($tries = 0, static function () use (&$invocations) {
             ++$invocations;
 
             return 5;
@@ -61,7 +61,7 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
         $outerException = $innerException = null;
 
         try {
-            \ScriptFUSION\Retry\retry($tries = 2, function () use (&$invocations, &$innerException) {
+            \ScriptFUSION\Retry\retry($tries = 2, static function () use (&$invocations, &$innerException) {
                 ++$invocations;
 
                 throw $innerException = new \RuntimeException;
@@ -80,7 +80,7 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
         $outerException = $innerException = null;
 
         try {
-            \ScriptFUSION\Retry\retry($tries = 2, function () use (&$invocations, &$innerException) {
+            \ScriptFUSION\Retry\retry($tries = 2, static function () use (&$invocations, &$innerException) {
                 ++$invocations;
 
                 throw $innerException = new \RuntimeException;
@@ -97,20 +97,20 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
         self::assertSame($tries - 1, $errors);
     }
 
+    /**
+     * Tests that an error handler that returns false aborts retrying.
+     */
     public function testErrorCallbackHalt()
     {
         $invocations = 0;
 
-        try {
-            \ScriptFUSION\Retry\retry($tries = 2, function () use (&$invocations) {
-                ++$invocations;
+        \ScriptFUSION\Retry\retry($tries = 2, static function () use (&$invocations) {
+            ++$invocations;
 
-                throw new \RuntimeException;
-            }, function () {
-                return false;
-            });
-        } catch (FailingTooHardException $exception) {
-        }
+            throw new \RuntimeException;
+        }, static function () {
+            return false;
+        });
 
         self::assertSame(1, $invocations);
     }
