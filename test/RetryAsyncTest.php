@@ -2,6 +2,8 @@
 namespace ScriptFUSIONTest\Retry;
 
 use Amp\Delayed;
+use Amp\Promise;
+use Amp\Success;
 use ScriptFUSION\Retry\FailingTooHardException;
 
 final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
@@ -94,7 +96,7 @@ final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * These that the error callback is called before each retry.
+     * Tests that the error callback is called before each retry.
      */
     public function testErrorCallbackAsync()
     {
@@ -120,13 +122,37 @@ final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * Tests that an error handler that returns false aborts retrying.
+     * Tests that an error callback that returns a promise has its promise resolved.
+     */
+    public function testPromiseErrorCallback()
+    {
+        $delay = 250; // Quarter of a second.
+        $start = microtime(true);
+
+        try {
+            \Amp\Promise\wait(
+                \ScriptFUSION\Retry\retryAsync($tries = 3, static function () {
+                    throw new \DomainException;
+                }, static function () use ($delay): Promise {
+                    return new Delayed($delay);
+                })
+            );
+        } catch (FailingTooHardException $outerException) {
+            self::assertInstanceOf(\DomainException::class, $outerException->getPrevious());
+        }
+
+        self::assertTrue(isset($outerException));
+        self::assertGreaterThan($start + $delay * ($tries - 1) / 1000, microtime(true));
+    }
+
+    /**
+     * Tests that when error handler that returns false, it aborts retrying.
      */
     public function testErrorCallbackHaltAsync()
     {
         $invocations = 0;
 
-        \ScriptFUSION\Retry\retryAsync($tries = 2, static function () use (&$invocations) {
+        \ScriptFUSION\Retry\retryAsync(2, static function () use (&$invocations) {
             ++$invocations;
 
             throw new \RuntimeException;
@@ -135,5 +161,37 @@ final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
         });
 
         self::assertSame(1, $invocations);
+    }
+
+    /**
+     * Tests that when an error handler returns a promise that false, it aborts retrying.
+     */
+    public function testPromiseErrorCallbackHaltAsync()
+    {
+        $invocations = 0;
+
+        \ScriptFUSION\Retry\retryAsync(2, static function () use (&$invocations) {
+            ++$invocations;
+
+            throw new \RuntimeException;
+        }, static function (): Promise {
+            return new Success(false);
+        });
+
+        self::assertSame(1, $invocations);
+    }
+
+    /**
+     * Tests that the exception handler can throw an exception that will not be caught.
+     */
+    public function testErrorCallbackCanThrow()
+    {
+        $this->setExpectedException(\LogicException::class);
+
+        \ScriptFUSION\Retry\retryAsync(2, static function () {
+            throw new \RuntimeException;
+        }, static function () {
+            throw new \LogicException;
+        });
     }
 }

@@ -22,7 +22,8 @@ use Amp\Success;
 function retry($tries, callable $operation, callable $onError = null)
 {
     /** @var \Generator $generator */
-    $generator = (static function () use ($tries, $operation, $onError) {
+    $generator = (static function () use ($tries, $operation, $onError): \Generator {
+        // Nothing to do if tries less than or equal to zero.
         if (($tries |= 0) <= $attempts = 0) {
             return;
         }
@@ -39,8 +40,14 @@ function retry($tries, callable $operation, callable $onError = null)
                 throw new FailingTooHardException($attempts, $exception);
             }
 
-            if ($onError && $onError($exception) === false) {
-                return;
+            if ($onError) {
+                if (($result = $onError($exception)) instanceof Promise) {
+                    $result = yield $result;
+                }
+
+                if ($result === false) {
+                    return;
+                }
             }
 
             goto beginning;
