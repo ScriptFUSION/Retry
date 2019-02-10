@@ -3,6 +3,7 @@ namespace ScriptFUSIONTest\Retry;
 
 use Amp\Delayed;
 use Amp\Promise;
+use Amp\Success;
 use ScriptFUSION\Retry\FailingTooHardException;
 
 final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
@@ -121,9 +122,9 @@ final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * Tests that an async error callback is processed asynchronously.
+     * Tests that an error callback that returns a promise has its promise resolved.
      */
-    public function testAsyncErrorCallback()
+    public function testPromiseErrorCallback()
     {
         $delay = 250; // Quarter of a second.
         $start = microtime(true);
@@ -145,7 +146,7 @@ final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * Tests that an error handler that returns false aborts retrying.
+     * Tests that when error handler that returns false, it aborts retrying.
      */
     public function testErrorCallbackHaltAsync()
     {
@@ -157,6 +158,24 @@ final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
             throw new \RuntimeException;
         }, static function () {
             return false;
+        });
+
+        self::assertSame(1, $invocations);
+    }
+
+    /**
+     * Tests that when an error handler returns a promise that false, it aborts retrying.
+     */
+    public function testPromiseErrorCallbackHaltAsync()
+    {
+        $invocations = 0;
+
+        \ScriptFUSION\Retry\retryAsync(2, static function () use (&$invocations) {
+            ++$invocations;
+
+            throw new \RuntimeException;
+        }, static function (): Promise {
+            return new Success(false);
         });
 
         self::assertSame(1, $invocations);

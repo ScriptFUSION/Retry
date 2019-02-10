@@ -22,7 +22,7 @@ use Amp\Success;
 function retry($tries, callable $operation, callable $onError = null)
 {
     /** @var \Generator $generator */
-    $generator = (static function () use ($tries, $operation, $onError) {
+    $generator = (static function () use ($tries, $operation, $onError): \Generator {
         // Nothing to do if tries less than or equal to zero.
         if (($tries |= 0) <= $attempts = 0) {
             return;
