@@ -74,6 +74,10 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
         self::assertSame($tries, $invocations);
     }
 
+    /**
+     * Tests that an error callback receives the exception thrown by the operation, the current attempt and maximum
+     * number of attempts.
+     */
     public function testErrorCallback()
     {
         $invocations = $errors = 0;
@@ -84,10 +88,12 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
                 ++$invocations;
 
                 throw $innerException = new \RuntimeException;
-            }, function (\Exception $exception) use (&$innerException, &$errors) {
+            }, static function (\Exception $exception, int $attempts, int $tries) use (&$innerException, &$errors) {
                 ++$errors;
 
                 self::assertSame($innerException, $exception);
+                self::assertSame(1, $attempts);
+                self::assertSame(2, $tries);
             });
         } catch (FailingTooHardException $outerException) {
         }

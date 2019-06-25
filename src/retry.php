@@ -41,7 +41,7 @@ function retry($tries, callable $operation, callable $onError = null)
             }
 
             if ($onError) {
-                if (($result = $onError($exception)) instanceof Promise) {
+                if (($result = $onError($exception, $attempts, $tries)) instanceof Promise) {
                     $result = yield $result;
                 }
 

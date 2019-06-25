@@ -104,14 +104,16 @@ final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
         $outerException = $innerException = null;
 
         try {
-            \ScriptFUSION\Retry\retryAsync($tries = 3, static function () use (&$invocations, &$innerException) {
+            \ScriptFUSION\Retry\retryAsync($tries = 2, static function () use (&$invocations, &$innerException) {
                 ++$invocations;
 
                 throw $innerException = new \RuntimeException;
-            }, function (\Exception $exception) use (&$innerException, &$errors) {
+            }, static function (\Exception $exception, int $attempts, int $tries) use (&$innerException, &$errors) {
                 ++$errors;
 
                 self::assertSame($innerException, $exception);
+                self::assertSame(1, $attempts);
+                self::assertSame(2, $tries);
             });
         } catch (FailingTooHardException $outerException) {
         }
