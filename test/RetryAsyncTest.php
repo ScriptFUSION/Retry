@@ -4,9 +4,12 @@ namespace ScriptFUSIONTest\Retry;
 use Amp\Delayed;
 use Amp\Promise;
 use Amp\Success;
+use PHPUnit\Framework\TestCase;
 use ScriptFUSION\Retry\FailingTooHardException;
+use function Amp\Promise\wait;
+use function ScriptFUSION\Retry\retryAsync;
 
-final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
+final class RetryAsyncTest extends TestCase
 {
     /**
      * Tests that a successful promise is returned without retrying.
@@ -15,8 +18,8 @@ final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
     {
         $invocations = 0;
 
-        $value = \Amp\Promise\wait(
-            \ScriptFUSION\Retry\retryAsync($tries = 1, static function () use (&$invocations) {
+        $value = wait(
+            retryAsync($tries = 1, static function () use (&$invocations) {
                 ++$invocations;
 
                 return new Delayed(0, 'foo');
@@ -35,8 +38,8 @@ final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
         $invocations = 0;
         $failed = false;
 
-        $value = \Amp\Promise\wait(
-            \ScriptFUSION\Retry\retryAsync($tries = 2, static function () use (&$invocations, &$failed) {
+        $value = wait(
+            retryAsync($tries = 2, static function () use (&$invocations, &$failed) {
                 ++$invocations;
 
                 if (!$failed) {
@@ -61,8 +64,8 @@ final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
     {
         $invocations = 0;
 
-        $value = \Amp\Promise\wait(
-            \ScriptFUSION\Retry\retryAsync($tries = 0, static function () use (&$invocations) {
+        $value = wait(
+            retryAsync($tries = 0, static function () use (&$invocations) {
                 ++$invocations;
 
                 return new Delayed(0, 'foo');
@@ -82,7 +85,7 @@ final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
         $outerException = $innerException = null;
 
         try {
-            \ScriptFUSION\Retry\retryAsync($tries = 3, static function () use (&$invocations, &$innerException) {
+            retryAsync($tries = 3, static function () use (&$invocations, &$innerException) {
                 ++$invocations;
 
                 throw $innerException = new \RuntimeException;
@@ -104,7 +107,7 @@ final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
         $outerException = $innerException = null;
 
         try {
-            \ScriptFUSION\Retry\retryAsync($tries = 2, static function () use (&$invocations, &$innerException) {
+            retryAsync($tries = 2, static function () use (&$invocations, &$innerException) {
                 ++$invocations;
 
                 throw $innerException = new \RuntimeException;
@@ -132,8 +135,8 @@ final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
         $start = microtime(true);
 
         try {
-            \Amp\Promise\wait(
-                \ScriptFUSION\Retry\retryAsync($tries = 3, static function () {
+            wait(
+                retryAsync($tries = 3, static function () {
                     throw new \DomainException;
                 }, static function () use ($delay): Promise {
                     return new Delayed($delay);
@@ -154,7 +157,7 @@ final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
     {
         $invocations = 0;
 
-        \ScriptFUSION\Retry\retryAsync(2, static function () use (&$invocations) {
+        retryAsync(2, static function () use (&$invocations) {
             ++$invocations;
 
             throw new \RuntimeException;
@@ -172,7 +175,7 @@ final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
     {
         $invocations = 0;
 
-        \ScriptFUSION\Retry\retryAsync(2, static function () use (&$invocations) {
+        retryAsync(2, static function () use (&$invocations) {
             ++$invocations;
 
             throw new \RuntimeException;
@@ -188,9 +191,9 @@ final class RetryAsyncTest extends \PHPUnit_Framework_TestCase
      */
     public function testErrorCallbackCanThrow()
     {
-        $this->setExpectedException(\LogicException::class);
+        $this->expectException(\LogicException::class);
 
-        \ScriptFUSION\Retry\retryAsync(2, static function () {
+        retryAsync(2, static function () {
             throw new \RuntimeException;
         }, static function () {
             throw new \LogicException;

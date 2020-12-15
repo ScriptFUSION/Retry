@@ -1,15 +1,17 @@
 <?php
 namespace ScriptFUSIONTest\Retry;
 
+use PHPUnit\Framework\TestCase;
 use ScriptFUSION\Retry\FailingTooHardException;
+use function ScriptFUSION\Retry\retry;
 
-final class RetryTest extends \PHPUnit_Framework_TestCase
+final class RetryTest extends TestCase
 {
     public function testWithoutFailing()
     {
         $invocations = 0;
 
-        $value = \ScriptFUSION\Retry\retry($tries = 1, static function () use (&$invocations) {
+        $value = retry($tries = 1, static function () use (&$invocations) {
             ++$invocations;
 
             return 5;
@@ -24,7 +26,7 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
         $invocations = 0;
         $failed = false;
 
-        $value = \ScriptFUSION\Retry\retry($tries = 2, static function () use (&$invocations, &$failed) {
+        $value = retry($tries = 2, static function () use (&$invocations, &$failed) {
             ++$invocations;
 
             if (!$failed) {
@@ -45,7 +47,7 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
     {
         $invocations = 0;
 
-        $value = \ScriptFUSION\Retry\retry($tries = 0, static function () use (&$invocations) {
+        $value = retry($tries = 0, static function () use (&$invocations) {
             ++$invocations;
 
             return 5;
@@ -61,7 +63,7 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
         $outerException = $innerException = null;
 
         try {
-            \ScriptFUSION\Retry\retry($tries = 2, static function () use (&$invocations, &$innerException) {
+            retry($tries = 2, static function () use (&$invocations, &$innerException) {
                 ++$invocations;
 
                 throw $innerException = new \RuntimeException;
@@ -84,7 +86,7 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
         $outerException = $innerException = null;
 
         try {
-            \ScriptFUSION\Retry\retry($tries = 2, static function () use (&$invocations, &$innerException) {
+            retry($tries = 2, static function () use (&$invocations, &$innerException) {
                 ++$invocations;
 
                 throw $innerException = new \RuntimeException;
@@ -110,7 +112,7 @@ final class RetryTest extends \PHPUnit_Framework_TestCase
     {
         $invocations = 0;
 
-        \ScriptFUSION\Retry\retry($tries = 2, static function () use (&$invocations) {
+        retry($tries = 2, static function () use (&$invocations) {
             ++$invocations;
 
             throw new \RuntimeException;
