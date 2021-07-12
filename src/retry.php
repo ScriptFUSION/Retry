@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace ScriptFUSION\Retry;
 
 use Amp\Coroutine;
@@ -12,19 +14,16 @@ use Amp\Success;
  *
  * @param int $tries Number of times.
  * @param callable $operation Operation.
- * @param callable $onError Optional. Exception handler.
+ * @param callable|null $onError Optional. Exception handler.
  *
  * @return mixed Result of running the operation if tries is greater than zero, otherwise null.
  *
- * @throws FailingTooHardException The maximum number of attempts was reached.
- * @throws \UnexpectedValueException The operation returned an unsupported type.
  */
-function retry($tries, callable $operation, callable $onError = null)
+function retry(int $tries, callable $operation, callable $onError = null)
 {
-    /** @var \Generator $generator */
     $generator = (static function () use ($tries, $operation, $onError): \Generator {
         // Nothing to do if tries less than or equal to zero.
-        if (($tries |= 0) <= $attempts = 0) {
+        if ($tries <= $attempts = 0) {
             return;
         }
 
@@ -76,15 +75,13 @@ function retry($tries, callable $operation, callable $onError = null)
  *
  * @param int $tries Number of times.
  * @param callable $operation Operation.
- * @param callable $onError Optional. Exception handler.
+ * @param callable|null $onError Optional. Exception handler.
  *
  * @return Promise Promise that returns the result of running the operation if tries is greater than zero, otherwise
  *     a promise that yields null.
  *
- * @throws FailingTooHardException The maximum number of attempts was reached.
- * @throws \UnexpectedValueException The operation returned an unsupported type.
  */
-function retryAsync($tries, callable $operation, callable $onError = null): Promise
+function retryAsync(int $tries, callable $operation, callable $onError = null): Promise
 {
     $generator = retry($tries, $operation, $onError);
 

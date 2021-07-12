@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace ScriptFUSION\Retry;
 
 /**
@@ -6,8 +8,22 @@ namespace ScriptFUSION\Retry;
  */
 class FailingTooHardException extends \RuntimeException
 {
-    public function __construct($attempts, \Exception $previous)
+    private $attempts;
+
+    public function __construct(int $attempts, \Exception $previous)
     {
         parent::__construct("Operation failed after $attempts attempt(s).", 0, $previous);
+
+        $this->attempts = $attempts;
+    }
+
+    /**
+     * Gets the number of times the operation was attempted before giving up.
+     *
+     * @return int Number of attempts.
+     */
+    public function getAttempts(): int
+    {
+        return $this->attempts;
     }
 }
