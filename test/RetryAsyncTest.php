@@ -1,45 +1,46 @@
 <?php
+declare(strict_types=1);
+
 namespace ScriptFUSIONTest\Retry;
 
-use Amp\Delayed;
-use Amp\Promise;
-use Amp\Success;
+use Amp\Future;
 use PHPUnit\Framework\TestCase;
 use ScriptFUSION\Retry\FailingTooHardException;
-use function Amp\Promise\wait;
-use function ScriptFUSION\Retry\retryAsync;
+use function Amp\async;
+use function Amp\delay;
+use function ScriptFUSION\Retry\retry;
 
 final class RetryAsyncTest extends TestCase
 {
     /**
-     * Tests that a successful promise is returned without retrying.
+     * Tests that a successful Future is returned without retrying.
      */
-    public function testWithoutFailingAsync()
+    public function testWithoutFailingAsync(): void
     {
         $invocations = 0;
 
-        $value = wait(
-            retryAsync($tries = 1, static function () use (&$invocations) {
+        $value =
+            retry($tries = 1, static function () use (&$invocations) {
                 ++$invocations;
 
-                return new Delayed(0, 'foo');
+                return self::delayAndReturn(0, 'foo');
             })
-        );
+        ;
 
         self::assertSame($tries, $invocations);
         self::assertSame('foo', $value);
     }
 
     /**
-     * Tests that a failed promise is retried.
+     * Tests that a failed Future is retried.
      */
-    public function testFailingOnceAsync()
+    public function testFailingOnceAsync(): void
     {
         $invocations = 0;
         $failed = false;
 
-        $value = wait(
-            retryAsync($tries = 2, static function () use (&$invocations, &$failed) {
+        $value =
+            retry($tries = 2, static function () use (&$invocations, &$failed) {
                 ++$invocations;
 
                 if (!$failed) {
@@ -48,9 +49,9 @@ final class RetryAsyncTest extends TestCase
                     throw new \RuntimeException;
                 }
 
-                return new Delayed(0, 'foo');
+                return self::delayAndReturn(0, 'foo');
             })
-        );
+        ;
 
         self::assertTrue($failed);
         self::assertSame($tries, $invocations);
@@ -60,17 +61,17 @@ final class RetryAsyncTest extends TestCase
     /**
      * Tests that trying zero times yields null.
      */
-    public function testZeroTriesAsync()
+    public function testZeroTriesAsync(): void
     {
         $invocations = 0;
 
-        $value = wait(
-            retryAsync($tries = 0, static function () use (&$invocations) {
+        $value =
+            retry($tries = 0, static function () use (&$invocations) {
                 ++$invocations;
 
-                return new Delayed(0, 'foo');
+                return self::delayAndReturn(0, 'foo');
             })
-        );
+        ;
 
         self::assertSame($tries, $invocations);
         self::assertNull($value);
@@ -79,13 +80,13 @@ final class RetryAsyncTest extends TestCase
     /**
      * Tests that reaching maximum tries throws FailingTooHardException.
      */
-    public function testFailingTooHardAsync()
+    public function testFailingTooHardAsync(): void
     {
         $invocations = 0;
         $outerException = $innerException = null;
 
         try {
-            retryAsync($tries = 3, static function () use (&$invocations, &$innerException) {
+            retry($tries = 3, static function () use (&$invocations, &$innerException) {
                 ++$invocations;
 
                 throw $innerException = new \RuntimeException;
@@ -101,13 +102,13 @@ final class RetryAsyncTest extends TestCase
     /**
      * Tests that the error callback is called before each retry.
      */
-    public function testErrorCallbackAsync()
+    public function testErrorCallbackAsync(): void
     {
         $invocations = $errors = 0;
         $outerException = $innerException = null;
 
         try {
-            retryAsync($tries = 2, static function () use (&$invocations, &$innerException) {
+            retry($tries = 2, static function () use (&$invocations, &$innerException) {
                 ++$invocations;
 
                 throw $innerException = new \RuntimeException;
@@ -127,61 +128,53 @@ final class RetryAsyncTest extends TestCase
     }
 
     /**
-     * Tests that an error callback that returns a promise has its promise resolved.
+     * Tests that an error callback that returns a Future has its Future resolved.
      */
-    public function testPromiseErrorCallback()
+    public function testFutureErrorCallback(): void
     {
-        $delay = 250; // Quarter of a second.
+        $delay = .25; // Quarter of a second.
         $start = microtime(true);
 
         try {
-            wait(
-                retryAsync($tries = 3, static function () {
-                    throw new \DomainException;
-                }, static function () use ($delay): Promise {
-                    return new Delayed($delay);
-                })
-            );
+            retry($tries = 3, static function () {
+                throw new \DomainException;
+            }, fn () => self::delayAndReturn($delay));
         } catch (FailingTooHardException $outerException) {
             self::assertInstanceOf(\DomainException::class, $outerException->getPrevious());
         }
 
         self::assertTrue(isset($outerException));
-        self::assertGreaterThan($start + $delay * ($tries - 1) / 1000, microtime(true));
+        self::assertGreaterThan($start + $delay * ($tries - 1), microtime(true));
     }
 
     /**
      * Tests that when error handler that returns false, it aborts retrying.
      */
-    public function testErrorCallbackHaltAsync()
+    public function testErrorCallbackHaltAsync(): void
     {
         $invocations = 0;
 
-        retryAsync(2, static function () use (&$invocations) {
+        retry(2, static function () use (&$invocations): never {
             ++$invocations;
 
             throw new \RuntimeException;
-        }, static function () {
-            return false;
-        });
+        }, fn () => false);
 
         self::assertSame(1, $invocations);
     }
 
     /**
-     * Tests that when an error handler returns a promise that false, it aborts retrying.
+     * Tests that when an error handler returns a Future that false, it aborts retrying.
      */
-    public function testPromiseErrorCallbackHaltAsync()
+    public function testFutureErrorCallbackHaltAsync(): void
     {
         $invocations = 0;
 
-        retryAsync(2, static function () use (&$invocations) {
+        retry(2, static function () use (&$invocations): never {
             ++$invocations;
 
             throw new \RuntimeException;
-        }, static function (): Promise {
-            return new Success(false);
-        });
+        }, fn () => Future::complete(false));
 
         self::assertSame(1, $invocations);
     }
@@ -189,14 +182,23 @@ final class RetryAsyncTest extends TestCase
     /**
      * Tests that the exception handler can throw an exception that will not be caught.
      */
-    public function testErrorCallbackCanThrow()
+    public function testErrorCallbackCanThrow(): void
     {
         $this->expectException(\LogicException::class);
 
-        retryAsync(2, static function () {
+        retry(2, static function (): never {
             throw new \RuntimeException;
-        }, static function () {
+        }, static function (): never {
             throw new \LogicException;
+        });
+    }
+
+    private static function delayAndReturn(float $delay, string $return = null): Future
+    {
+        return async(static function () use ($delay, $return): ?string {
+            delay($delay);
+
+            return $return;
         });
     }
 }

@@ -13,11 +13,12 @@
     }
   ],
   "require": {
-    "php": "^7.2|^8"
+    "php": "^8.1"
   },
   "require-dev": {
+    "amphp/amp": "^3-beta.9",
     "phpunit/phpunit": "^8.5|^9",
-    "amphp/amp": "^2.2"
+    "revolt/event-loop": "^0.2"
   },
   "autoload": {
     "files": [
@@ -34,5 +35,8 @@
   },
   "scripts": {
     "test": "phpunit -c test"
+  },
+  "config": {
+    "sort-packages": true
   }
 }
