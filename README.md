@@ -7,14 +7,15 @@ Retry
 [![Test coverage][Coverage image]][Coverage]
 [![Code style][Style image]][Style]
 
-Retry provides a function to retry failing operations. An operation is deemed to have failed if it throws an exception.
+Retry provides a function to retry failing operations with optional [Fiber][Fibers] support.
+An operation is deemed to have failed if it throws an exception.
 This library is a rewrite of [Igor Wiedler's retry](https://github.com/igorw/retry) but aims to remain faithful to the
 spirit of the original.
 
 Requirements
 ------------
 
-- [PHP 5.5](http://php.net/)
+- [PHP 8.1](http://php.net/)
 - [Composer](https://getcomposer.org/)
 
 Usage
@@ -49,12 +50,14 @@ $response = retry(5, function () use ($url) {
 ```
 
 
+  [Fibers]: https://www.php.net/manual/en/language.fibers.php
+
   [Releases]: https://github.com/ScriptFUSION/Retry/releases
   [Version image]: https://poser.pugx.org/scriptfusion/retry/v/stable "Latest version"
   [Downloads]: https://packagist.org/packages/scriptfusion/retry
   [Downloads image]: https://poser.pugx.org/scriptfusion/retry/downloads "Total downloads"
-  [Build]: http://travis-ci.org/ScriptFUSION/Retry
-  [Build image]: https://travis-ci.org/ScriptFUSION/Retry.svg "Build status"
+  [Build]: https://github.com/ScriptFUSION/Retry/actions/workflows/Tests.yaml
+  [Build image]: https://github.com/ScriptFUSION/Retry/actions/workflows/Tests.yaml/badge.svg "Build status"
   [Coverage]: https://coveralls.io/github/ScriptFUSION/Retry
   [Coverage image]: https://coveralls.io/repos/ScriptFUSION/Retry/badge.svg "Test coverage"
   [Style]: https://styleci.io/repos/62990558

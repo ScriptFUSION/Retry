@@ -17,7 +17,7 @@
   },
   "require-dev": {
     "amphp/amp": "^3-beta.9",
-    "phpunit/phpunit": "^8.5|^9",
+    "phpunit/phpunit": "^9.5",
     "revolt/event-loop": "^0.2"
   },
   "autoload": {
