@@ -15,7 +15,7 @@ spirit of the original.
 Requirements
 ------------
 
-- [PHP 8.1](http://php.net/)
+- [PHP 8.0](http://php.net/)
 - [Composer](https://getcomposer.org/)
 
 Usage

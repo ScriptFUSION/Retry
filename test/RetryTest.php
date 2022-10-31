@@ -9,7 +9,10 @@ use function ScriptFUSION\Retry\retry;
 
 final class RetryTest extends TestCase
 {
-    public function testWithoutFailing()
+    /**
+     * Tests that when an operation is successful, its result is returned without retrying.
+     */
+    public function testWithoutFailing(): void
     {
         $invocations = 0;
 
@@ -23,7 +26,10 @@ final class RetryTest extends TestCase
         self::assertSame(5, $value);
     }
 
-    public function testFailingOnce()
+    /**
+     * Tests that when an operation fails once, it is retried.
+     */
+    public function testFailingOnce(): void
     {
         $invocations = 0;
         $failed = false;
@@ -45,7 +51,10 @@ final class RetryTest extends TestCase
         self::assertSame(5, $value);
     }
 
-    public function testZeroTries()
+    /**
+     * Tests that when an operation is attempted zero times, the operation is not invoked and returns null.
+     */
+    public function testZeroTries(): void
     {
         $invocations = 0;
 
@@ -59,7 +68,10 @@ final class RetryTest extends TestCase
         self::assertNull($value);
     }
 
-    public function testFailingTooHard()
+    /**
+     * Tests that when an operation is retried the maximum number of tries, FailingTooHardException is thrown.
+     */
+    public function testFailingTooHard(): void
     {
         $invocations = 0;
         $outerException = $innerException = null;
@@ -79,10 +91,10 @@ final class RetryTest extends TestCase
     }
 
     /**
-     * Tests that an error callback receives the exception thrown by the operation, the current attempt and maximum
-     * number of attempts.
+     * Tests that when an exception is thrown by the operation, the error callback receives that exception, the current
+     * attempt index and maximum number of attempts.
      */
-    public function testErrorCallback()
+    public function testErrorCallback(): void
     {
         $invocations = $errors = 0;
         $outerException = $innerException = null;
@@ -108,20 +120,28 @@ final class RetryTest extends TestCase
     }
 
     /**
-     * Tests that an error handler that returns false aborts retrying.
+     * Tests that when an error handler returns false, retries are aborted.
      */
-    public function testErrorCallbackHalt()
+    public function testErrorCallbackHalt(): void
     {
         $invocations = 0;
 
-        retry($tries = 2, static function () use (&$invocations) {
+        retry(2, static function () use (&$invocations) {
             ++$invocations;
 
             throw new \RuntimeException;
-        }, static function () {
-            return false;
-        });
+        }, fn () => false);
 
         self::assertSame(1, $invocations);
+    }
+
+    /**
+     * Tests that when an exception handler throws an exception, the exception is not caught.
+     */
+    public function testErrorCallbackCanThrow(): void
+    {
+        $this->expectExceptionObject($exception = new \LogicException);
+
+        retry(2, fn () => throw new \RuntimeException, fn () => throw $exception);
     }
 }
