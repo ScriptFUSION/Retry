@@ -17,7 +17,7 @@ namespace ScriptFUSION\Retry;
  * @throws FailingTooHardException The maximum number of attempts was reached.
  * @throws \UnexpectedValueException The operation returned an unsupported type.
  */
-function retry(int $tries, callable $operation, callable $onError = null): mixed
+function retry(int $tries, callable $operation, ?callable $onError = null): mixed
 {
     // Nothing to do if tries less than or equal to zero.
     if ($tries <= $attempts = 0) {
